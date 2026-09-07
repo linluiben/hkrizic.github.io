@@ -1,10 +1,10 @@
-import { FULL_CROP, MIN_CROP, clamp, normalizeCrop, getLayout, detectContentCrop, buildLandscape } from './pdf-core.mjs';
+import { FULL_CROP, MIN_CROP, clamp, normalizeCrop, getLayout, detectContentCrop, extractOutline, buildLandscape } from './pdf-core.mjs';
 
 const $ = id => document.getElementById(id);
 const PDFJS_BASE = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/';
 let libraries;
 let sourceDoc = null, previewDoc = null, currentFile = null;
-let crops = [], pageIndex = 0, currentPage = null, sourceCanvas = null;
+let crops = [], outline = [], pageIndex = 0, currentPage = null, sourceCanvas = null;
 let busy = false, rendering = false, renderVersion = 0, renderTask = null;
 let drag = null, downloadURL = null;
 const options = { side: 'left', paper: 'a4', margin: 8 };
@@ -85,6 +85,8 @@ async function openFile(file) {
     const candidatePreview = await candidateTask.promise;
     if (!candidatePreview.numPages) throw new Error('EMPTY');
     if (candidatePreview.numPages !== candidateSource.getPageCount()) throw new Error('PAGE_COUNT');
+    // The export keeps every page in place, so the outline can be carried over.
+    const candidateOutline = await extractOutline(candidatePreview);
     const oldPreview = previewDoc;
     renderVersion++;
     if (renderTask) renderTask.cancel();
@@ -92,13 +94,14 @@ async function openFile(file) {
     previewDoc = candidatePreview;
     currentFile = file;
     crops = Array.from({ length: previewDoc.numPages }, () => ({ ...FULL_CROP }));
+    outline = candidateOutline;
     pageIndex = 0;
     sourceCanvas = null;
     currentPage = null;
     if (oldPreview) await oldPreview.destroy();
     if (downloadURL) { URL.revokeObjectURL(downloadURL); downloadURL = null; }
     $('filename').textContent = file.name;
-    $('file-meta').textContent = `${previewDoc.numPages} ${previewDoc.numPages === 1 ? 'page' : 'pages'} · ${(file.size / 1024 / 1024).toLocaleString('en', { maximumFractionDigits: 1 })} MB`;
+    $('file-meta').textContent = `${previewDoc.numPages} ${previewDoc.numPages === 1 ? 'page' : 'pages'} · ${(file.size / 1024 / 1024).toLocaleString('en', { maximumFractionDigits: 1 })} MB${outline.length ? ' · outline kept' : ''}`;
     $('page-count').textContent = `/ ${previewDoc.numPages}`;
     $('page-number').max = previewDoc.numPages;
     $('upload').hidden = true;
@@ -311,7 +314,7 @@ async function download() {
   $('status').textContent = 'Creating PDF …';
   try {
     const { PDFLib } = await loadLibraries();
-    const bytes = await buildLandscape({ sourceDoc, previewDoc, crops, options, PDFLib, rasterize,
+    const bytes = await buildLandscape({ sourceDoc, previewDoc, crops, options, outline, PDFLib, rasterize,
       onProgress: (done, total) => {
         $('status').textContent = `Creating PDF: page ${done} of ${total} …`;
         $('export-progress').value = done / total * 100;
