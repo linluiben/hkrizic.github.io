@@ -1,4 +1,4 @@
-import { FULL_CROP, MIN_CROP, clamp, normalizeCrop, getLayout, detectContentCrop, buildLandscape } from './pdf-core.mjs';
+import { FULL_CROP, MIN_CROP, clamp, normalizeCrop, getLayout, paintNotesPattern, detectContentCrop, buildLandscape } from './pdf-core.mjs';
 
 const $ = id => document.getElementById(id);
 const PDFJS_BASE = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/';
@@ -7,7 +7,7 @@ let sourceDoc = null, previewDoc = null, currentFile = null;
 let crops = [], pageIndex = 0, currentPage = null, sourceCanvas = null;
 let busy = false, rendering = false, renderVersion = 0, renderTask = null;
 let drag = null, downloadURL = null;
-const options = { side: 'left', paper: 'a4', margin: 8 };
+const options = { side: 'left', paper: 'a4', margin: 8, pattern: 'none', patternSize: 5 };
 
 async function loadLibraries() {
   if (!libraries) {
@@ -47,6 +47,8 @@ function syncControls() {
   $('page-number').disabled = busy;
   $('paper').disabled = busy;
   $('margin').disabled = busy;
+  $('notes-pattern').disabled = busy;
+  $('pattern-size').disabled = busy || options.pattern === 'none';
   document.querySelectorAll('input[name=side]').forEach(input => { input.disabled = busy; });
   $('preview-stage').setAttribute('aria-busy', String(rendering));
 }
@@ -170,6 +172,7 @@ function drawLandscape(canvas, maxWidth) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingQuality = 'high';
   const sx = canvas.width / layout.width, sy = canvas.height / layout.height;
+  paintNotesPattern(ctx, layout, options, sx, sy);
   ctx.drawImage(sourceCanvas,
     crop.left * sourceCanvas.width, crop.top * sourceCanvas.height,
     (crop.right - crop.left) * sourceCanvas.width, (crop.bottom - crop.top) * sourceCanvas.height,
@@ -364,6 +367,11 @@ $('page-number').addEventListener('change', event => {
 });
 document.querySelectorAll('input[name=side]').forEach(input => input.addEventListener('change', () => { options.side = input.value; drawPreviews(); }));
 $('paper').addEventListener('change', event => { options.paper = event.target.value; drawPreviews(); });
+$('notes-pattern').addEventListener('change', event => { options.pattern = event.target.value; syncControls(); drawPreviews(); });
+$('pattern-size').addEventListener('input', event => {
+  if (Number.isFinite(event.target.valueAsNumber)) { options.patternSize = clamp(event.target.valueAsNumber, 3, 15); drawPreviews(); }
+});
+$('pattern-size').addEventListener('change', event => { event.target.value = options.patternSize; });
 $('margin').addEventListener('input', event => { if (Number.isFinite(event.target.valueAsNumber)) { options.margin = clamp(event.target.valueAsNumber, 0, 25); drawPreviews(); } });
 $('margin').addEventListener('change', event => { event.target.value = options.margin; });
 $('open-crop').addEventListener('click', openCrop);
