@@ -408,12 +408,72 @@
 									filter: grayscale(0);
 									box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 								}
+
+								/* Passwortabfrage fuer das Skript */
+								#skript-gate {
+									position: fixed;
+									inset: 0;
+									background: rgba(45, 35, 66, 0.55);
+									display: flex;
+									align-items: center;
+									justify-content: center;
+									z-index: 9999;
+									padding: 20px;
+								}
+								#skript-gate[hidden] { display: none; }
+								#skript-gate .gate-box {
+									background: #fff;
+									border-radius: 10px;
+									padding: 28px 26px 22px;
+									max-width: 360px;
+									width: 100%;
+									text-align: center;
+									box-shadow: 0 10px 40px rgba(45, 35, 66, 0.35);
+									font-family: 'Quicksand', sans-serif;
+								}
+								#skript-gate h4 {
+									font-family: 'Quicksand', sans-serif;
+									margin: 0 0 6px;
+									font-weight: 700;
+								}
+								#skript-gate p {
+									font-size: 14px;
+									color: #666;
+									margin: 0 0 16px;
+								}
+								#skript-gate input {
+									width: 100%;
+									padding: 10px 12px;
+									border: 1px solid #D6D6E7;
+									border-radius: 6px;
+									font-size: 15px;
+									text-align: center;
+									margin-bottom: 12px;
+								}
+								#skript-gate input:focus {
+									outline: none;
+									border-color: #6b5bd2;
+								}
+								#skript-gate .gate-error {
+									color: #c0392b;
+									font-size: 14px;
+									min-height: 20px;
+									margin: 0 0 10px;
+								}
+								#skript-gate .gate-cancel {
+									display: inline-block;
+									margin-top: 12px;
+									font-size: 14px;
+									color: #888;
+									cursor: pointer;
+									text-decoration: underline;
+								}
 							</style>
 
 							<div class="col-md-12 col-sm-12 col-xs-12 col-xxs-12 fh5co-staff to-animate text-center">
 
 
-								<button class="button-30" type="button" role="button" onclick="window.location.href = '2026/Skript/Vorkurs_Skript.pdf';" style="width: 200px;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Vorkurs-Skript</button><br><br>
+								<button class="button-30" id="skript-button" type="button" role="button" onclick="openSkriptGate();" style="width: 200px;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Vorkurs-Skript</button><br><br>
 								<p style="font-size: 15px; margin-top: 12px;"><a href="../pdftool/">PDF mit Notizplatz erstellen &rarr;</a><br><small>Skript oder Aufgaben zuschneiden und im Querformat mit einer freien Hälfte für Notizen herunterladen.</small></p>
 								<!--<button class="button-30" role="button" onclick="window.location.href = '2024/Mathematik_fuer_Physiker.pdf';" style="width: 300px;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Mathematik für Physiker</button>
 								-->
@@ -440,7 +500,7 @@
 							<br>
 							<div class="text-center">
 								<button class="button-30" type="button" role="button" onclick="window.location.href = '2026/Aufgaben/Aufg_Montag.pdf';" style="width: 150px; margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Montag</button>
-								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Aufgaben/Aufg_Dienstag.pdf" style="width: 150px; margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Dienstag</button>
+								<button class="button-30" type="button" role="button" onclick="window.location.href = '2026/Aufgaben/Aufg_Dienstag.pdf';" style="width: 150px; margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Dienstag</button>
 								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Aufgaben/Aufg_Mittwoch.pdf" style="width: 150px; margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Mittwoch</button>
 								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Aufgaben/Aufg_Donnerstag.pdf" style="width: 150px; margin-right: 0%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Donnerstag</button>
 							</div>
@@ -454,7 +514,7 @@
 							</div>
 							<br>
 							<div class="text-center">
-								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Loesungen/Loes_Montag.pdf" style="width: 150px;  margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Montag</button>
+								<button class="button-30" type="button" role="button" onclick="window.location.href = '2026/Loesungen/Loes_Montag.pdf';" style="width: 150px;  margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Montag</button>
 								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Loesungen/Loes_Dienstag.pdf" style="width: 150px;margin-right: 7%;"><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Dienstag</button>
 								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Loesungen/Loes_Mittwoch.pdf" style="width: 150px;margin-right: 7%; "><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Mittwoch</button>
 								<button class="button-30 locked" type="button" disabled aria-disabled="true" title="Wird während der Kurswoche aufgeschaltet" data-href="2026/Loesungen/Loes_Donnerstag.pdf" style="width: 150px; "><img src="images/paper.png" style="height: 50%;margin-right: 10%;">Donnerstag</button>
@@ -479,6 +539,18 @@
 	</footer>
 
 
+	<!-- Passwortabfrage Skript -->
+	<div id="skript-gate" hidden>
+		<div class="gate-box">
+			<h4>Skript geschützt</h4>
+			<p>Bitte das Passwort aus der Vorlesung eingeben.</p>
+			<input type="password" id="skript-pass" placeholder="Passwort" autocomplete="off">
+			<p class="gate-error" id="skript-error"></p>
+			<button class="button-30" type="button" role="button" id="skript-submit" style="width: 160px;">Öffnen</button>
+			<div><span class="gate-cancel" id="skript-cancel">Abbrechen</span></div>
+		</div>
+	</div>
+
 	<!-- jQuery -->
 	<script src="js/jquery.min.js"></script>
 	<!-- jQuery Easing -->
@@ -497,6 +569,87 @@
 			}, 1000);
 		});
 	</script>
-	
+
+	<script>
+		/* Passwortschutz fuer das Vorkurs-Skript.
+		   Hinweis: rein clientseitig - ein Schutz gegen Gelegenheitszugriff, keine echte Zugangskontrolle. */
+		(function () {
+			var SKRIPT_URL = '2026/Skript/Vorkurs_Skript.pdf';
+			var PASS_HASH = '6d4c9cf5e022a07ea8013a4b07a30a88270c65dfd5223ccc3964d9a7b4525008';
+			var STORE_KEY = 'vorkurs2026-skript';
+
+			var gate, input, error;
+
+			function unlocked() {
+				try { return window.localStorage.getItem(STORE_KEY) === PASS_HASH; } catch (e) { return false; }
+			}
+
+			function remember() {
+				try { window.localStorage.setItem(STORE_KEY, PASS_HASH); } catch (e) { /* z.B. privates Fenster */ }
+			}
+
+			function sha256Hex(text) {
+				if (!window.crypto || !window.crypto.subtle) { return Promise.resolve(null); }
+				return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+					return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+						return b.toString(16).padStart(2, '0');
+					}).join('');
+				});
+			}
+
+			function openSkript() {
+				window.location.href = SKRIPT_URL;
+			}
+
+			function closeGate() {
+				gate.hidden = true;
+				input.value = '';
+				error.textContent = '';
+			}
+
+			function check() {
+				var value = input.value.trim();
+				if (!value) { return; }
+				sha256Hex(value).then(function (hash) {
+					// Fallback ohne crypto.subtle (z.B. beim Oeffnen ueber file://)
+					var ok = hash ? hash === PASS_HASH : value === atob('dHJpdmlhbA==');
+					if (ok) {
+						remember();
+						closeGate();
+						openSkript();
+					} else {
+						error.textContent = 'Falsches Passwort.';
+						input.select();
+					}
+				});
+			}
+
+			window.openSkriptGate = function () {
+				if (unlocked()) { openSkript(); return; }
+				gate.hidden = false;
+				input.focus();
+			};
+
+			document.addEventListener('DOMContentLoaded', function () {
+				gate = document.getElementById('skript-gate');
+				input = document.getElementById('skript-pass');
+				error = document.getElementById('skript-error');
+				if (!gate) { return; }
+
+				document.getElementById('skript-submit').addEventListener('click', check);
+				document.getElementById('skript-cancel').addEventListener('click', closeGate);
+				input.addEventListener('keydown', function (ev) {
+					if (ev.key === 'Enter') { ev.preventDefault(); check(); }
+				});
+				gate.addEventListener('click', function (ev) {
+					if (ev.target === gate) { closeGate(); }
+				});
+				document.addEventListener('keydown', function (ev) {
+					if (ev.key === 'Escape' && !gate.hidden) { closeGate(); }
+				});
+			});
+		})();
+	</script>
+
 	</body>
 </html>
