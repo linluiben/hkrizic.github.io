@@ -53,7 +53,11 @@
             <select id="paper"><option value="a4">A4 · Landscape</option><option value="a3">A3 · Landscape</option><option value="letter">Letter · Landscape</option></select>
           </label>
           <label class="field" for="margin">Page margin <span class="input-unit"><input id="margin" type="number" min="0" max="25" step="1" value="8"><span>mm</span></span></label>
-          <p class="small">These settings apply to all pages. The other half stays completely blank.</p>
+          <label class="field" for="notes-pattern">Notes area
+            <select id="notes-pattern"><option value="none">Blank</option><option value="squared">Squared</option><option value="dotted">Dotted</option></select>
+          </label>
+          <label class="field" for="pattern-size">Grid spacing <span class="input-unit"><input id="pattern-size" type="number" min="3" max="15" step="1" value="5"><span>mm</span></span></label>
+          <p class="small">These settings apply to all pages. The other half is left for your notes.</p>
           <hr>
           <h2>Crop margins</h2>
           <p class="small">Adjust the crop for each page. The content scales to fit.</p>
