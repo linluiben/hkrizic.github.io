@@ -5,6 +5,12 @@ export const PAPER_SIZES = Object.freeze({ a4: [841.89, 595.28], a3: [1190.55, 8
 // Light enough to write over, dark enough to follow on screen and in print.
 const NOTES_COLOR = Object.freeze({ red: .68, green: .72, blue: .78 });
 const NOTES_LINE_WIDTH = .35, NOTES_DOT_RADIUS = .5;
+// Cornell proportions follow the ruled-paper standard: a cue column taking
+// 2.5 of 8.5 inches, a summary band taking 2 of 11. Its rules carry more
+// weight than the background so the three areas read as the main division.
+const CORNELL_CUE = .3, CORNELL_SUMMARY = .18, CORNELL_LINE_WIDTH = .8;
+const CORNELL_COLOR = Object.freeze({ red: .45, green: .52, blue: .6 });
+const cssColor = color => `rgb(${[color.red, color.green, color.blue].map(value => Math.round(value * 255)).join(',')})`;
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export function normalizeCrop(crop) {
@@ -58,29 +64,59 @@ export function detectContentCrop({ data, width, height }) {
 
 // The blank half is the page half the document is not placed on. Its geometry
 // only depends on the settings, so preview and export can share it.
+export function getNotesArea(options) {
+  const [width, height] = PAPER_SIZES[options.paper] || PAPER_SIZES.a4;
+  const margin = clamp(Number(options.margin) || 0, 0, 25) * 72 / 25.4;
+  return { x: (options.side === 'left' ? width / 2 : 0) + margin, y: margin,
+    width: width / 2 - 2 * margin, height: height - 2 * margin };
+}
+
 export function getNotesPattern(options) {
   if (options.pattern !== 'squared' && options.pattern !== 'dotted') return null;
-  const [width, height] = PAPER_SIZES[options.paper] || PAPER_SIZES.a4;
+  const area = getNotesArea(options);
   const spacing = clamp(Number(options.patternSize) || 5, 3, 15) * 72 / 25.4;
-  const margin = clamp(Number(options.margin) || 0, 0, 25) * 72 / 25.4;
-  const areaWidth = width / 2 - 2 * margin, areaHeight = height - 2 * margin;
-  const columns = Math.floor(areaWidth / spacing), rows = Math.floor(areaHeight / spacing);
+  const columns = Math.floor(area.width / spacing), rows = Math.floor(area.height / spacing);
   if (columns < 1 || rows < 1) return null;
   // Centre the whole grid in the half so partial cells do not sit on one edge.
   return { kind: options.pattern, spacing, columns, rows,
-    x: (options.side === 'left' ? width / 2 : 0) + margin + (areaWidth - columns * spacing) / 2,
-    y: margin + (areaHeight - rows * spacing) / 2,
+    x: area.x + (area.width - columns * spacing) / 2,
+    y: area.y + (area.height - rows * spacing) / 2,
     width: columns * spacing, height: rows * spacing };
 }
 
-// Paints the same pattern onto a canvas so the preview matches the export.
-export function paintNotesPattern(ctx, layout, options, sx, sy) {
-  const pattern = getNotesPattern(options);
-  if (!pattern) return;
+// Cornell notes: a cue column down the left, a summary band across the foot.
+// The rules span the whole half, independent of where the grid cells fall.
+export function getCornellLayout(options) {
+  if (!options.cornell) return null;
+  const area = getNotesArea(options);
+  return { ...area, cue: area.x + area.width * CORNELL_CUE,
+    summary: area.y + area.height * CORNELL_SUMMARY };
+}
+
+// Paints the same overlay onto a canvas so the preview matches the export.
+export function paintNotesOverlay(ctx, layout, options, sx, sy) {
+  const pattern = getNotesPattern(options), cornell = getCornellLayout(options);
+  if (!pattern && !cornell) return;
   ctx.save();
-  ctx.strokeStyle = ctx.fillStyle = `rgb(${[NOTES_COLOR.red, NOTES_COLOR.green, NOTES_COLOR.blue].map(value => Math.round(value * 255)).join(',')})`;
   // The canvas draws from the top left, the layout is measured from the bottom.
-  const left = pattern.x * sx, top = (layout.height - pattern.y - pattern.height) * sy;
+  const toTop = value => (layout.height - value) * sy;
+  if (pattern) paintPattern(ctx, pattern, sx, sy, toTop);
+  if (cornell) {
+    ctx.strokeStyle = cssColor(CORNELL_COLOR);
+    ctx.lineWidth = Math.max(.8, CORNELL_LINE_WIDTH * sx);
+    ctx.beginPath();
+    ctx.moveTo(cornell.cue * sx, toTop(cornell.y + cornell.height));
+    ctx.lineTo(cornell.cue * sx, toTop(cornell.summary));
+    ctx.moveTo(cornell.x * sx, toTop(cornell.summary));
+    ctx.lineTo((cornell.x + cornell.width) * sx, toTop(cornell.summary));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function paintPattern(ctx, pattern, sx, sy, toTop) {
+  ctx.strokeStyle = ctx.fillStyle = cssColor(NOTES_COLOR);
+  const left = pattern.x * sx, top = toTop(pattern.y + pattern.height);
   ctx.beginPath();
   if (pattern.kind === 'squared') {
     ctx.lineWidth = Math.max(.5, NOTES_LINE_WIDTH * sx);
@@ -104,7 +140,6 @@ export function paintNotesPattern(ctx, layout, options, sx, sy) {
     }
     ctx.fill();
   }
-  ctx.restore();
 }
 
 function notesPatternOperators(pattern, PDFLib) {
@@ -134,13 +169,26 @@ function notesPatternOperators(pattern, PDFLib) {
   return [...operators, fill()];
 }
 
-// The pattern is identical on every page, so it is stored once as a compressed
+function cornellOperators(cornell, PDFLib) {
+  const { moveTo, lineTo, stroke, setLineWidth, setStrokingColor, rgb } = PDFLib;
+  return [setLineWidth(CORNELL_LINE_WIDTH),
+    setStrokingColor(rgb(CORNELL_COLOR.red, CORNELL_COLOR.green, CORNELL_COLOR.blue)),
+    moveTo(cornell.cue, cornell.summary), lineTo(cornell.cue, cornell.y + cornell.height),
+    moveTo(cornell.x, cornell.summary), lineTo(cornell.x + cornell.width, cornell.summary),
+    stroke()];
+}
+
+// The overlay is identical on every page, so it is stored once as a compressed
 // form XObject that each page only references.
-function embedNotesPattern(output, pattern, PDFLib) {
-  const context = output.context;
-  const content = notesPatternOperators(pattern, PDFLib).map(operator => operator.toString()).join('\n');
+function embedNotesOverlay(output, options, PDFLib) {
+  const pattern = getNotesPattern(options), cornell = getCornellLayout(options);
+  if (!pattern && !cornell) return null;
+  const context = output.context, area = getNotesArea(options);
+  const content = [...(pattern ? notesPatternOperators(pattern, PDFLib) : []),
+    ...(cornell ? cornellOperators(cornell, PDFLib) : [])]
+    .map(operator => operator.toString()).join('\n');
   return context.register(context.flateStream(content, { Type: 'XObject', Subtype: 'Form',
-    BBox: [pattern.x, pattern.y, pattern.x + pattern.width, pattern.y + pattern.height], Resources: {} }));
+    BBox: [area.x, area.y, area.x + area.width, area.y + area.height], Resources: {} }));
 }
 
 export async function buildLandscape({ sourceDoc, previewDoc, crops, options, PDFLib, rasterize, onProgress = () => {} }) {
@@ -148,14 +196,13 @@ export async function buildLandscape({ sourceDoc, previewDoc, crops, options, PD
   const output = await PDFDocument.create();
   output.setTitle('PDF with room for notes');
   output.setCreator('PDF Tool');
-  const pattern = getNotesPattern(options);
-  const patternRef = pattern && embedNotesPattern(output, pattern, PDFLib);
+  const overlayRef = embedNotesOverlay(output, options, PDFLib);
   for (let i = 0; i < previewDoc.numPages; i++) {
     const page = await previewDoc.getPage(i + 1);
     const viewport = page.getViewport({ scale: 1 });
     const layout = getLayout(viewport, crops[i], options);
     const target = output.addPage([layout.width, layout.height]);
-    if (patternRef) target.pushOperators(pushGraphicsState(), drawObject(target.node.newXObject('NotesPattern', patternRef)), popGraphicsState());
+    if (overlayRef) target.pushOperators(pushGraphicsState(), drawObject(target.node.newXObject('NotesOverlay', overlayRef)), popGraphicsState());
     const annotations = await page.getAnnotations({ intent: 'display' });
     if (annotations.some(annotation => annotation.subtype !== 'Link')) {
       // Page embedding omits annotation appearances. Render these pages so that

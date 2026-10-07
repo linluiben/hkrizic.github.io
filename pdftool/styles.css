@@ -48,6 +48,8 @@ legend, .field { font-size: .875rem; font-weight: 600; }
 legend { padding: 0; margin-bottom: 8px; }
 .field { display: block; margin-bottom: 18px; }
 .field select, .input-unit { margin-top: 8px; }
+.field.toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.field.toggle input { width: 18px; height: 18px; accent-color: var(--red); cursor: pointer; }
 .segments { display: flex; gap: 8px; }
 .segments label { flex: 1; position: relative; cursor: pointer; }
 .segments input { position: absolute; width: 1px; height: 1px; opacity: 0; }
