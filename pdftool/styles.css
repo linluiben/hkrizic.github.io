@@ -55,6 +55,7 @@ legend { padding: 0; margin-bottom: 8px; }
 .segments input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .segments span { display: flex; justify-content: center; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: .875rem; }
 .segments input:checked + span { color: var(--red); border-color: var(--red); background: #fff8f8; }
+.segments input:disabled + span { opacity: .45; cursor: default; }
 .segments input:focus-visible + span { outline: 3px solid #e3292970; outline-offset: 3px; }
 .side-icon { display: inline-block; width: 23px; height: 17px; border: 1px solid currentColor; border-radius: 2px; background: linear-gradient(to right, currentColor 50%, transparent 50%); }
 .side-icon.right { transform: rotate(180deg); }

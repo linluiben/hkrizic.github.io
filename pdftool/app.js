@@ -7,7 +7,7 @@ let sourceDoc = null, previewDoc = null, currentFile = null;
 let crops = [], pageIndex = 0, currentPage = null, sourceCanvas = null;
 let busy = false, rendering = false, renderVersion = 0, renderTask = null;
 let drag = null, downloadURL = null;
-const options = { side: 'left', paper: 'a4', margin: 8, pattern: 'none', patternSize: 5, cornell: false };
+const options = { side: 'left', paper: 'a4', margin: 8, pattern: 'none', patternSize: 5, cornell: false, cue: 'outer' };
 
 async function loadLibraries() {
   if (!libraries) {
@@ -50,6 +50,7 @@ function syncControls() {
   $('notes-pattern').disabled = busy;
   $('pattern-size').disabled = busy || options.pattern === 'none';
   $('cornell').disabled = busy;
+  document.querySelectorAll('input[name=cue]').forEach(input => { input.disabled = busy || !options.cornell; });
   document.querySelectorAll('input[name=side]').forEach(input => { input.disabled = busy; });
   $('preview-stage').setAttribute('aria-busy', String(rendering));
 }
@@ -373,7 +374,8 @@ $('pattern-size').addEventListener('input', event => {
   if (Number.isFinite(event.target.valueAsNumber)) { options.patternSize = clamp(event.target.valueAsNumber, 3, 15); drawPreviews(); }
 });
 $('pattern-size').addEventListener('change', event => { event.target.value = options.patternSize; });
-$('cornell').addEventListener('change', event => { options.cornell = event.target.checked; drawPreviews(); });
+$('cornell').addEventListener('change', event => { options.cornell = event.target.checked; syncControls(); drawPreviews(); });
+document.querySelectorAll('input[name=cue]').forEach(input => input.addEventListener('change', () => { options.cue = input.value; drawPreviews(); }));
 $('margin').addEventListener('input', event => { if (Number.isFinite(event.target.valueAsNumber)) { options.margin = clamp(event.target.valueAsNumber, 0, 25); drawPreviews(); } });
 $('margin').addEventListener('change', event => { event.target.value = options.margin; });
 $('open-crop').addEventListener('click', openCrop);

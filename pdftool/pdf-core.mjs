@@ -84,13 +84,15 @@ export function getNotesPattern(options) {
     width: columns * spacing, height: rows * spacing };
 }
 
-// Cornell notes: a cue column down the left, a summary band across the foot.
-// The rules span the whole half, independent of where the grid cells fall.
+// Cornell notes: a cue column beside a main area, a summary band across the
+// foot. The rules span the whole half, independent of where grid cells fall.
 export function getCornellLayout(options) {
   if (!options.cornell) return null;
   const area = getNotesArea(options);
-  return { ...area, cue: area.x + area.width * CORNELL_CUE,
-    summary: area.y + area.height * CORNELL_SUMMARY };
+  // 'outer' keeps the cue column against the page edge, away from the document.
+  const onLeft = options.cue === 'outer' ? options.side === 'right' : options.cue === 'left';
+  return { ...area, onLeft, summary: area.y + area.height * CORNELL_SUMMARY,
+    cue: area.x + area.width * (onLeft ? CORNELL_CUE : 1 - CORNELL_CUE) };
 }
 
 // Paints the same overlay onto a canvas so the preview matches the export.
