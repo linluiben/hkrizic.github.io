@@ -301,7 +301,7 @@ export async function buildLandscape({ sourceDoc, previewDoc, crops, options, ou
   const output = await PDFDocument.create();
   output.setTitle('PDF with room for notes');
   output.setCreator('PDF Tool');
-  const placements = [];
+  const placements = [], pending = [];
   const overlayRef = embedNotesOverlay(output, options, PDFLib);
   for (let i = 0; i < previewDoc.numPages; i++) {
     const page = await previewDoc.getPage(i + 1);
@@ -318,15 +318,24 @@ export async function buildLandscape({ sourceDoc, previewDoc, crops, options, ou
       const image = await output.embedPng(await rasterize(page, layout));
       target.drawImage(image, { x: layout.x, y: layout.y, width: layout.contentWidth, height: layout.contentHeight });
     } else if (sourceDoc.getPage(i).node.Contents()) {
-      const embedded = await output.embedPage(sourceDoc.getPage(i), bounds, [1, 0, 0, 1, 0, 0]);
-      target.pushOperators(pushGraphicsState(), concatTransformationMatrix(...matrix));
-      target.drawPage(embedded);
-      target.pushOperators(popGraphicsState());
+      pending.push({ index: i, target, bounds, matrix });
     }
     onProgress(i + 1, previewDoc.numPages);
     // Yield between pages so progress and the interface can update.
     await new Promise(resolve => setTimeout(resolve, 0));
   }
+  // Embedding the pages in one call copies what they share - fonts above all -
+  // into the output once instead of once per page, which decides the file size
+  // of a long document far more than its page count does.
+  const embedded = pending.length ? await output.embedPages(
+    pending.map(page => sourceDoc.getPage(page.index)),
+    pending.map(page => page.bounds),
+    pending.map(() => [1, 0, 0, 1, 0, 0])) : [];
+  pending.forEach(({ target, matrix }, order) => {
+    target.pushOperators(pushGraphicsState(), concatTransformationMatrix(...matrix));
+    target.drawPage(embedded[order]);
+    target.pushOperators(popGraphicsState());
+  });
   applyOutline({ output, outline, placements, PDFLib });
   return output.save();
 }
